@@ -285,25 +285,26 @@ class AI(object):
       #assert g == grid
       #print '=' * 30
       #self.show(grid)
+      scores = []
       for i in range4:
         for j in range4:
           if grid[i][j] is not None:
             continue
 
           tmp = list(grid[i])
-          for v in (2, 4):
-            tmp[j] = v
-            grid[i] = tuple(tmp)
-            score = self.search_max(grid, depth, a, b, moves)
-            if score <= a:
-              tmp[j] = None
-              grid[i] = tuple(tmp)
-              return a
-            if score < b:
-              b = score
-
+          tmp[j] = 2
+          grid[i] = tuple(tmp)
+          s2 = self.search_max(grid, depth, a, b, moves)
+          tmp[j] = 4
+          grid[i] = tuple(tmp)
+          s4 = self.search_max(grid, depth, a, b, moves)
           tmp[j] = None
           grid[i] = tuple(tmp)
+
+          score = s2 * 0.9 + s4 * 0.1
+          scores.append(score)
+      if scores:
+          b = sum(scores) / len(scores)
 
       self.table[key] = b
       return b
