@@ -24,12 +24,60 @@ to_idx[None] = 0
 def clone(grid):
     return [row[:] for row in grid]
 
+def move_row(row):
+    out = [None, None, None, None]
+    oc = 0
+    ic = 0
+    while ic < 4:
+        if row[ic] is None:
+            ic += 1
+            continue
+        out[oc] = row[ic]
+        oc += 1
+        ic += 1
+
+    ic = 0
+    oc = 0
+    while ic < 4:
+        if out[ic] is None:
+            break
+        if ic == 3:
+            out[oc] = out[ic]
+            oc += 1
+            break
+        if out[ic] == out[ic+1]:
+            out[oc] = 2*out[ic]
+            ic += 1
+        else:
+            out[oc] = out[ic]
+        ic += 1
+        oc += 1
+    while oc < 4:
+        out[oc] = None
+        oc += 1
+    return out
+
 class AI(object):
     def __init__(self):
         self.total_node = 0
         self.total_time = 0
         self.eval_count = 0
         self.table = {}
+        self.move_table = {}
+        self.move_table_r = {}
+        self.build_move_table()
+
+    def build_move_table(self):
+        values = [None] + [2**x for x in range(1, 16)]
+        for a in values:
+            for b in values:
+                for c in values:
+                    for d in values:
+                        row = a, b, c, d
+                        assert row not in self.move_table
+                        self.move_table[row] = move_row(row)
+                        assert row not in self.move_table_r
+                        self.move_table_r[row] = move_row(row[::-1])[::-1]
 
     def emptyGrid(self):
         return [[None,None,None,None],[None,None,None,None],
@@ -67,8 +115,6 @@ class AI(object):
         return a.tostring()
 
     def move(self, grid, direction):
-        out = self.emptyGrid()
-
         if direction == KEY_UP:
             rot = 1
         elif direction == KEY_RIGHT:
@@ -79,52 +125,34 @@ class AI(object):
             rot = 0
 
         if rot == 3:
+            tmp = [
+                self.move_table_r[tuple(grid[0])][:],
+                self.move_table_r[tuple(grid[1])][:],
+                self.move_table_r[tuple(grid[2])][:],
+                self.move_table_r[tuple(grid[3])][:],
+                ]
+            return tmp
+        if rot == 1:
+            pass
+        elif rot == 0:
             grid = self.rotateRight(grid)
-        elif rot == 2:
+        elif rot == 3:
             grid = self.flip(grid)
-        else:
-            for i in xrange(rot):
-                grid = self.rotateLeft(grid)
-
-        for r in range4:
-            oc = 0
-            ic = 0
-            while ic < 4:
-                if grid[ic][r] is None:
-                    ic += 1
-                    continue
-                out[oc][r] = grid[ic][r]
-                oc += 1
-                ic += 1
-
-            ic = 0
-            oc = 0
-            while ic < 4:
-                if out[ic][r] is None:
-                    break
-                if ic == 3:
-                    out[oc][r] = out[ic][r]
-                    oc += 1
-                    break
-                if out[ic][r] == out[ic+1][r]:
-                    out[oc][r] = 2*out[ic][r]
-                    ic += 1
-                else:
-                    out[oc][r] = out[ic][r]
-                ic += 1
-                oc += 1
-            while oc < 4:
-                out[oc][r] = None
-                oc += 1
-
-        if rot == 3:
-            out = self.rotateLeft(out)
         elif rot == 2:
-            out = self.flip(out)
-        else:
-            for i in xrange(rot):
-                out = self.rotateRight(out)
+            grid = self.rotateLeft(grid)
 
+        out = [
+                self.move_table[tuple(grid[0])][:],
+                self.move_table[tuple(grid[1])][:],
+                self.move_table[tuple(grid[2])][:],
+                self.move_table[tuple(grid[3])][:],
+                ]
+        if rot == 0:
+            out = self.rotateLeft(out)
+        elif rot == 3:
+            out = self.flip(out)
+        elif rot == 2:
+            out = self.rotateRight(out)
 
         return out
 
