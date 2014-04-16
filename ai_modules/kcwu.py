@@ -74,10 +74,8 @@ class AI(object):
                 for c in values:
                     for d in values:
                         row = a, b, c, d
-                        assert row not in self.move_table
-                        self.move_table[row] = move_row(row)
-                        assert row not in self.move_table_r
-                        self.move_table_r[row] = move_row(row[::-1])[::-1]
+                        self.move_table[row] = tuple(move_row(row))
+                        self.move_table_r[row] = tuple(move_row(row[::-1])[::-1])
 
     def emptyGrid(self):
         return [[None,None,None,None],[None,None,None,None],
@@ -86,19 +84,19 @@ class AI(object):
     def rotateLeft(self, grid):
         g = grid
         return [
-                [g[3][0], g[2][0], g[1][0], g[0][0]],
-                [g[3][1], g[2][1], g[1][1], g[0][1]],
-                [g[3][2], g[2][2], g[1][2], g[0][2]],
-                [g[3][3], g[2][3], g[1][3], g[0][3]],
+                (g[3][0], g[2][0], g[1][0], g[0][0]),
+                (g[3][1], g[2][1], g[1][1], g[0][1]),
+                (g[3][2], g[2][2], g[1][2], g[0][2]),
+                (g[3][3], g[2][3], g[1][3], g[0][3]),
                 ]
 
     def rotateRight(self, grid):
         g = grid
         return [
-                [g[0][3], g[1][3], g[2][3], g[3][3]],
-                [g[0][2], g[1][2], g[2][2], g[3][2]],
-                [g[0][1], g[1][1], g[2][1], g[3][1]],
-                [g[0][0], g[1][0], g[2][0], g[3][0]],
+                (g[0][3], g[1][3], g[2][3], g[3][3]),
+                (g[0][2], g[1][2], g[2][2], g[3][2]),
+                (g[0][1], g[1][1], g[2][1], g[3][1]),
+                (g[0][0], g[1][0], g[2][0], g[3][0]),
                 ]
 
     def flip(self, grid):
@@ -126,10 +124,10 @@ class AI(object):
 
         if rot == 3:
             tmp = [
-                self.move_table_r[tuple(grid[0])][:],
-                self.move_table_r[tuple(grid[1])][:],
-                self.move_table_r[tuple(grid[2])][:],
-                self.move_table_r[tuple(grid[3])][:],
+                self.move_table_r[grid[0]],
+                self.move_table_r[grid[1]],
+                self.move_table_r[grid[2]],
+                self.move_table_r[grid[3]],
                 ]
             return tmp
         if rot == 1:
@@ -142,10 +140,10 @@ class AI(object):
             grid = self.rotateLeft(grid)
 
         out = [
-                self.move_table[tuple(grid[0])][:],
-                self.move_table[tuple(grid[1])][:],
-                self.move_table[tuple(grid[2])][:],
-                self.move_table[tuple(grid[3])][:],
+                self.move_table[grid[0]],
+                self.move_table[grid[1]],
+                self.move_table[grid[2]],
+                self.move_table[grid[3]],
                 ]
         if rot == 0:
             out = self.rotateLeft(out)
@@ -299,16 +297,20 @@ class AI(object):
           if grid[i][j] is not None:
             continue
 
+          tmp = list(grid[i])
           for v in (2, 4):
-            grid[i][j] = v
+            tmp[j] = v
+            grid[i] = tuple(tmp)
             score = self.search_max(grid, depth, a, b, moves)
             if score <= a:
-              grid[i][j] = None
+              tmp[j] = None
+              grid[i] = tuple(tmp)
               return a
             if score < b:
               b = score
 
-          grid[i][j] = None
+          tmp[j] = None
+          grid[i] = tuple(tmp)
 
       self.table[key] = b
       return b
@@ -323,6 +325,7 @@ class AI(object):
       self.reset()
 
       t0 = time.time()
+      grid = map(tuple, grid)
       for m in moves:
         #print 'move', m
         g2 = self.move(grid, m)
