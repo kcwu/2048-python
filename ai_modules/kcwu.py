@@ -152,7 +152,7 @@ class AI(object):
             # 26090
             #L += m
             # 29281
-            L += m ** 2
+            L += m ** 2 * 4
           else:
             # 20585
             #L -= abs(to_idx[grid[x][y]] - to_idx[grid[x][y+1]]) ** 2
@@ -164,7 +164,7 @@ class AI(object):
         for y in range3:
           if grid[x][y] <= grid[x][y+1] and grid[x][y+1]:
             m += 1
-            R += m ** 2
+            R += m ** 2 * 4
           else:
             #R -= abs(to_idx[grid[x][y]] - to_idx[grid[x][y+1]]) ** 2
             R -= abs((grid[x][y] or 0)- (grid[x][y+1] or 0)) * 1.5
@@ -178,7 +178,7 @@ class AI(object):
         for x in range3:
           if grid[x][y] and grid[x][y] >= grid[x+1][y]:
             m += 1
-            U += m ** 2
+            U += m ** 2 * 4
           else:
             #U -= abs(to_idx[grid[x][y]] - to_idx[grid[x+1][y]]) ** 2
             U -= abs((grid[x][y] or 0)- (grid[x+1][y] or 0)) * 1.5
@@ -188,7 +188,7 @@ class AI(object):
         for x in range3:
           if grid[x][y] <= grid[x+1][y] and grid[x+1][y]:
             m += 1
-            D += m ** 2
+            D += m ** 2 * 4
           else:
             #D -= abs(to_idx[grid[x][y]] - to_idx[grid[x+1][y]]) ** 2
             D -= abs((grid[x][y] or 0)- (grid[x+1][y] or 0)) * 1.5
