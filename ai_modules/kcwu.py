@@ -103,14 +103,7 @@ class AI(object):
         return [grid[3][::-1], grid[2][::-1], grid[1][::-1], grid[0][::-1]]
 
     def encode(self, grid):
-        a = array.array('h')
-        for x in range4:
-            for y in range4:
-                if grid[x][y]:
-                    a.append(grid[x][y])
-                else:
-                    a.append(0)
-        return a.tostring()
+        return grid[0]+grid[1]+grid[2]+grid[3]
 
     def move(self, grid, direction):
         if direction == KEY_UP:
