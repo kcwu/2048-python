@@ -284,6 +284,53 @@ class AI(object):
                 score_smooth -= s
         return score_smooth
 
+    def eval_smoothness(self, grid):
+        a00, a01, a02, a03 = grid[0]
+        a10, a11, a12, a13 = grid[1]
+        a20, a21, a22, a23 = grid[2]
+        a30, a31, a32, a33 = grid[3]
+
+        a00 = a00 or 2
+        a01 = a01 or 2
+        a02 = a02 or 2
+        a03 = a03 or 2
+        a10 = a10 or 2
+        a11 = a11 or 2
+        a12 = a12 or 2
+        a13 = a13 or 2
+        a20 = a20 or 2
+        a21 = a21 or 2
+        a22 = a22 or 2
+        a23 = a23 or 2
+        a30 = a30 or 2
+        a31 = a31 or 2
+        a32 = a32 or 2
+        a33 = a33 or 2
+
+        score_smooth = 0
+        score_smooth -= min(abs(a00-a01), abs(a00-a10))
+        score_smooth -= min([abs(a01-a00), abs(a01-a11), abs(a01-a02)])
+        score_smooth -= min([abs(a02-a01), abs(a02-a12), abs(a02-a03)])
+        score_smooth -= min(abs(a03-a02), abs(a03-a13))
+
+        score_smooth -= min([abs(a10-a00), abs(a10-a11), abs(a10-a20)])
+        score_smooth -= min([abs(a11-a01), abs(a11-a10), abs(a11-a12), abs(a11-a21)])
+        score_smooth -= min([abs(a12-a02), abs(a12-a11), abs(a12-a13), abs(a12-a22)])
+        score_smooth -= min([abs(a13-a03), abs(a13-a12), abs(a13-a23)])
+
+        score_smooth -= min([abs(a20-a10), abs(a20-a21), abs(a20-a30)])
+        score_smooth -= min([abs(a21-a11), abs(a21-a20), abs(a21-a22), abs(a21-a31)])
+        score_smooth -= min([abs(a22-a12), abs(a22-a21), abs(a22-a23), abs(a22-a32)])
+        score_smooth -= min([abs(a23-a13), abs(a23-a22), abs(a23-a33)])
+
+        score_smooth -= min(abs(a30-a31), abs(a30-a20))
+        score_smooth -= min([abs(a31-a30), abs(a31-a21), abs(a31-a32)])
+        score_smooth -= min([abs(a32-a31), abs(a32-a22), abs(a32-a33)])
+        score_smooth -= min(abs(a33-a32), abs(a33-a23))
+
+        return score_smooth
+
+
     def eval_free(self, grid):
         free = grid[0].count(None) + grid[1].count(None) + grid[2].count(None) + grid[3].count(None)
         return -(16-free)**2
