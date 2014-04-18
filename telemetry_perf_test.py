@@ -135,6 +135,12 @@ def Main(args):
   #options = browser_options.BrowserFinderOptions()
   #parser = options.CreateParser('telemetry_perf_test.py')
   #options, args = parser.parse_args(args)
+  global ITERATION, NCPU
+  if args:
+    ITERATION = int(args[0])
+  if len(args) >= 2:
+    NCPU = int(args[1])
+  NCPU = min(NCPU, ITERATION)
 
   #browser_to_create = browser_finder.FindBrowser(options)
   #assert browser_to_create
@@ -146,8 +152,8 @@ def Main(args):
     scores = []
 
     remain.value = ITERATION
-    if ITERATION == 1:
-      result = [simulation(0)]
+    if NCPU == 1:
+      result = map(simulation, range(ITERATION))
     else:
       pool = multiprocessing.Pool(processes=min(NCPU, ITERATION))
       result = pool.map(simulation, range(ITERATION))
