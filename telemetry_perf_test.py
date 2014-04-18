@@ -135,6 +135,11 @@ def simulation(idx):
     print '    AI pressed %s' % nextKey
     gm.pressKey(KEY_CODE[nextKey])
     gm.board.show()
+    for m in KEY_CODE.keys():
+      if gm.board.canMove(gm.getGrid(), m):
+        break
+    else:
+      break
     #time.sleep(0.03)
     if gm.isWin():
       gm.keepGoing()

@@ -109,7 +109,6 @@ class Board(object):
     if moved:
       if not self.randomTile():
         self.over = True
-    self.over = (next_board[0].count(None) + next_board[1].count(None) + next_board[2].count(None) + next_board[3].count(None)) == 0
 
   def canMove(self, grid, direction):
     return grid != self.to_move(grid, direction)[0]
