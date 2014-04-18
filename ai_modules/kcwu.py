@@ -12,8 +12,6 @@ KEY_DOWN = 'down'
 INF = 100000000
 
 moves = [KEY_DOWN, KEY_LEFT, KEY_UP, KEY_RIGHT]
-moves_LR = [ KEY_LEFT, KEY_RIGHT ]
-moves_UD = [ KEY_UP, KEY_DOWN ]
 range4 = range(4)
 range3 = range(3)
 
@@ -163,7 +161,7 @@ class AI(object):
                 self.move_table_r[grid[2]],
                 self.move_table_r[grid[3]],
                 ]
-            return tmp
+            return tmp, (tmp != grid)
         if rot == 1:
             pass
         elif rot == 0:
@@ -179,14 +177,8 @@ class AI(object):
                 self.move_table[grid[2]],
                 self.move_table[grid[3]],
                 ]
-        if rot == 0:
-            out = self.rotateLeft(out)
-        elif rot == 3:
-            out = self.flip(out)
-        elif rot == 2:
-            out = self.rotateRight(out)
 
-        return out
+        return out, (out != grid)
 
     def show(self, grid):
         for y in range(4):
@@ -440,12 +432,12 @@ class AI(object):
         self.table[key] = avg_score
         return avg_score
 
-    def search_max(self, grid, depth, moves, nodep):
+    def search_max(self, grid, depth, nodep):
       best_score = -INF
       self.node_count += 1
       for m in moves:
-        g2 = self.move(grid, m)
-        if g2 == grid:
+        g2, moved = self.move(grid, m)
+        if not moved:
           continue
         score = self.search_min(g2, depth - 1, nodep)
         #print 'search_max', m, score
@@ -480,7 +472,7 @@ class AI(object):
                   continue
               tmp[j] = v
               grid[i] = tuple(tmp)
-              score += p * self.search_max(grid, depth, moves, p*nodep)
+              score += p * self.search_max(grid, depth, p*nodep)
               all_p += p
           tmp[j] = None
           grid[i] = tuple(tmp)
@@ -513,13 +505,16 @@ class AI(object):
       grid = map(tuple, grid)
       for m in moves:
         #print 'move', m
-        g2 = self.move(grid, m)
-        if g2 == grid:
+        g2, moved = self.move(grid, m)
+        if not moved:
           continue
         #print grid
         #print g2
         score = s1 = self.search_min(g2, 3-1, 1.0)
         #score = s2 = self.search_drop_and_move(g2, 3-1)
+
+        # round to avoid the instability of floating point numbers
+        score = round(score, 6)
 
         #print score, m
         if score > best_score:
