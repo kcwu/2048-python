@@ -109,10 +109,22 @@ def simulation(idx):
 
   step = 0
   total_time = 0
+  stale_steps = 0
+  grid = None
+  last_grid = None
   while not gm.isOver():
     step += 1
     print 'Current score: %d grid: %r' % (gm.getScore(), gm.getGrid())
+    last_grid = grid
     grid = gm.getGrid()
+    if grid == last_grid:
+      stale_steps += 1
+    else:
+      stale_steps = 0
+    if stale_steps >= 10:
+      sys.stderr.write('stale\n')
+      assert 0
+      timeout_count.value = -99999
     t0 = time.time()
     nextKey = gm.ai.getNextMove(grid)
     t1 = time.time()

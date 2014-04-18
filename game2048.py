@@ -3,6 +3,7 @@ import random
 from ai import AI
 #from ai_modules.dumb import AI
 from ai_modules.kcwu import AI
+#from ai_modules.short_lo import AI
 N = 4
 
 KEY_CODE = {'left': 37,
@@ -100,12 +101,15 @@ class Board(object):
   def move(self, direction):
     #print 'move', direction
     next_board, got_score = self.to_move(self.board, direction)
+    moved = (next_board != self.board)
 
     self.board = next_board
     self.score += got_score
 
-    if not self.randomTile():
-      self.over = True
+    if moved:
+      if not self.randomTile():
+        self.over = True
+    self.over = (next_board[0].count(None) + next_board[1].count(None) + next_board[2].count(None) + next_board[3].count(None)) == 0
 
   def canMove(self, grid, direction):
     return grid != self.to_move(grid, direction)[0]
