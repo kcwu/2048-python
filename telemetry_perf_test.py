@@ -99,6 +99,7 @@ class Dummy:
     pass
 
 remain = multiprocessing.Value('i')
+timeout_count = multiprocessing.Value('i')
 def simulation(idx):
   random.seed(idx)
   if idx > 0:
@@ -117,7 +118,8 @@ def simulation(idx):
     t1 = time.time()
     total_time += t1 - t0
     if t1 - t0 > 0.1:
-      sys.stderr.write('t %f\n' % (t1 - t0))
+      timeout_count.value += 1
+      sys.stderr.write('t %f, count=%d\n' % (t1 - t0, timeout_count.value))
     print '    AI pressed %s' % nextKey
     gm.pressKey(KEY_CODE[nextKey])
     gm.board.show()
@@ -166,6 +168,7 @@ def Main(args):
     print "Avg = %f" % ((sum(scores) - max(scores) - min(scores)) /
         (ITERATION - 2.0))
     print '%f ms/step' % (1000.0*(total_t)/total_step)
+    print 'timeout count', timeout_count.value
 
   return 0
 
