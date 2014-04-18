@@ -278,11 +278,14 @@ class AI(object):
 
         score_keeper = [[{},{},{},{}], [{},{},{},{}], [{},{},{},{}], [{},{},{},{}]]
         for direction in range4:
-            moved = [0]*4 # TODO
-            is_moved = [0]*4
-            num_blank = 0
+            is_moved = [0,0,0,0]
+            moved = [
+                    self.move_table[grid[0]],
+                    self.move_table[grid[1]],
+                    self.move_table[grid[2]],
+                    self.move_table[grid[3]],
+                    ]
             for i in range4:
-                moved[i] = self.move_table[grid[i]]
                 is_moved[i] = moved[i] != grid[i]
             total_can_move = is_moved.count(True)
 
@@ -297,25 +300,27 @@ class AI(object):
                         x += 1
                         continue
 
+                    keeper = score_keeper[moving][x]
                     # found first blank now
-                    for v, p in ((2, 0.9), (4, 0.1)):
+                    for v in (2, 4):
                         drop_row = row[:x] + (v,) + row[x+1:]
                         next_row = self.move_table[drop_row]
                         this_can_move = drop_row != next_row
-                        next_grid = moved[:moving] + [next_row] + moved[moving+1:]
 
-                        if p not in score_keeper[moving][x]:
-                            score_keeper[moving][x][p] = [-INF]
+                        if v not in keeper:
+                            keeper[v] = [-INF]
                         if not (this_can_move or other_can_move) and (x == 3 or row[x+1] is not None):
                             continue
+                        next_grid = moved[:moving] + [next_row,] + moved[moving+1:]
                         score = self.search_drop_and_move(next_grid, depth-1)
                         if this_can_move or other_can_move:
-                            score_keeper[moving][x][p].append(score)
+                            keeper[v].append(score)
                         x2 = x + 1
                         while x2 < 4 and row[x2] is None:
-                            if p not in score_keeper[moving][x2]:
-                                score_keeper[moving][x2][p] = []
-                            score_keeper[moving][x2][p].append(score)
+                            keeper2 = score_keeper[moving][x2]
+                            if v not in keeper2:
+                                keeper2[v] = []
+                            keeper2[v].append(score)
                             x2 += 1
 
                         
@@ -329,16 +334,13 @@ class AI(object):
         scores = []
         for x in range4:
             for y in range4:
-                cell = score_keeper[x][y]
-                if not cell:
+                if grid[x][y] is not None:
                     continue
+                cell = score_keeper[x][y]
                 cell_score = 0
-                for p, vs in cell.items():
-                    if vs:
-                        score = max(vs)
-                    else:
-                        score = -INF
-                    cell_score += score * p
+                for v, ss in cell.items():
+                    p = {2:0.9, 4:0.1}[v]
+                    cell_score += max(ss) * p
                 scores.append(cell_score)
 
         if scores:
