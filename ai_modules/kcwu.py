@@ -18,10 +18,6 @@ range3 = range(3)
 to_idx = dict((2**i, i) for i in range(16))
 to_idx[None] = 0
 
-
-def clone(grid):
-    return [row[:] for row in grid]
-
 def move_row(row):
     out = [None, None, None, None]
     oc = 0
@@ -162,12 +158,8 @@ class AI(object):
                 self.move_table_r[grid[3]],
                 ]
             return tmp, (tmp != grid)
-        if rot == 1:
-            pass
-        elif rot == 0:
+        if rot == 0:
             grid = self.rotateRight(grid)
-        elif rot == 3:
-            grid = self.flip(grid)
         elif rot == 2:
             grid = self.rotateLeft(grid)
 
@@ -338,7 +330,6 @@ class AI(object):
       score_smooth = self.eval_smoothness(grid)
       score_free = self.eval_free(grid)
 
-
       score = 0
       score += score_smooth
       score += score_monotone
@@ -346,91 +337,6 @@ class AI(object):
 
       self.table[key] = score
       return score
-
-    def search_drop_and_move(self, grid, depth):
-        if depth == 0:
-            return self.eval(grid)
-        self.node_count += 1
-
-        key = self.encode(grid), depth
-        if key in self.table:
-            return self.table[key]
-
-        score_keeper = [[{},{},{},{}], [{},{},{},{}], [{},{},{},{}], [{},{},{},{}]]
-        for direction in range4:
-            is_moved = [0,0,0,0]
-            moved = [
-                    self.move_table[grid[0]],
-                    self.move_table[grid[1]],
-                    self.move_table[grid[2]],
-                    self.move_table[grid[3]],
-                    ]
-            for i in range4:
-                is_moved[i] = moved[i] != grid[i]
-            total_can_move = is_moved.count(True)
-
-            for moving in range4:
-                row = grid[moving]
-                other_can_move = total_can_move - (is_moved[moving] and 1)
-
-                x = 0
-                while x < 4:
-                    # skip non-blank
-                    if row[x] is not None:
-                        x += 1
-                        continue
-
-                    keeper = score_keeper[moving][x]
-                    # found first blank now
-                    for v in (2, 4):
-                        drop_row = row[:x] + (v,) + row[x+1:]
-                        next_row = self.move_table[drop_row]
-                        this_can_move = drop_row != next_row
-
-                        if v not in keeper:
-                            keeper[v] = [-INF]
-                        if not (this_can_move or other_can_move) and (x == 3 or row[x+1] is not None):
-                            continue
-                        next_grid = moved[:moving] + [next_row,] + moved[moving+1:]
-                        score = self.search_drop_and_move(next_grid, depth-1)
-                        if this_can_move or other_can_move:
-                            keeper[v].append(score)
-                        x2 = x + 1
-                        while x2 < 4 and row[x2] is None:
-                            keeper2 = score_keeper[moving][x2]
-                            if v not in keeper2:
-                                keeper2[v] = []
-                            keeper2[v].append(score)
-                            x2 += 1
-
-                        
-                    # next round
-                    while x < 4 and row[x] is None:
-                        x += 1
-
-            grid = self.rotateRight(grid)
-            score_keeper = self.rotateRight(score_keeper)
-
-        scores = []
-        for x in range4:
-            for y in range4:
-                if grid[x][y] is not None:
-                    continue
-                cell = score_keeper[x][y]
-                cell_score = 0
-                for v, ss in cell.items():
-                    p = {2:0.9, 4:0.1}[v]
-                    cell_score += max(ss) * p
-                scores.append(cell_score)
-
-        if scores:
-            avg_score = sum(scores) / len(scores)
-        else:
-            avg_score = -INF
-
-
-        self.table[key] = avg_score
-        return avg_score
 
     def search_max(self, grid, depth, nodep):
       best_score = -INF
@@ -443,7 +349,6 @@ class AI(object):
         #print 'search_max', m, score
         if score > best_score:
           best_score = score
-
 
       return best_score
 
@@ -482,12 +387,8 @@ class AI(object):
           else:
               score /= all_p
           scores.append(score)
-      if scores:
-          b = sum(scores) / len(scores)
-      else:
-          assert 0
-          b = INF
 
+      b = sum(scores) / len(scores)
       self.table[key] = b
       return b
 
@@ -510,8 +411,7 @@ class AI(object):
           continue
         #print grid
         #print g2
-        score = s1 = self.search_min(g2, 3-1, 1.0)
-        #score = s2 = self.search_drop_and_move(g2, 3-1)
+        score = self.search_min(g2, 3-1, 1.0)
 
         # round to avoid the instability of floating point numbers
         score = round(score, 6)
@@ -530,6 +430,5 @@ class AI(object):
           t1-t0, self.eval_count, self.node_count, self.total_eval, self.total_node, (self.total_node+self.total_eval)/self.total_time)
 
       return best_move
-
 
 # vim:sw=4:expandtab:softtabstop=4
