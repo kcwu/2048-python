@@ -352,13 +352,13 @@ class AI(object):
         self.table[key] = avg_score
         return avg_score
 
-    def search_max(self, grid, depth, moves):
+    def search_max(self, grid, depth, moves, nodep):
       best_score = -INF
       for m in moves:
         g2 = self.move(grid, m)
         if g2 == grid:
           continue
-        score = self.search_min(g2, depth - 1)
+        score = self.search_min(g2, depth - 1, nodep)
         #print 'search_max', m, score
         if score > best_score:
           best_score = score
@@ -366,13 +366,15 @@ class AI(object):
 
       return best_score
 
-    def search_min(self, grid, depth):
+    def search_min(self, grid, depth, nodep):
       if depth == 0:
         return self.eval(grid)
 
       key = self.encode(grid), depth
       if key in self.table:
         return self.table[key]
+
+      blank_count = grid[0].count(None) + grid[1].count(None) + grid[2].count(None) + grid[3].count(None)
 
       scores = []
       for i in range4:
@@ -381,16 +383,22 @@ class AI(object):
             continue
 
           tmp = list(grid[i])
-          tmp[j] = 2
-          grid[i] = tuple(tmp)
-          s2 = self.search_max(grid, depth, moves)
-          tmp[j] = 4
-          grid[i] = tuple(tmp)
-          s4 = self.search_max(grid, depth, moves)
+          score = 0
+          all_p = 0
+          for v, p in ((2, 0.9), (4, 0.1)):
+              if blank_count > 3 and p * nodep*0.9 < 0.1: # XXX hardcode for level=3
+                  continue
+              tmp[j] = v
+              grid[i] = tuple(tmp)
+              score += p * self.search_max(grid, depth, moves, p*nodep)
+              all_p += p
           tmp[j] = None
           grid[i] = tuple(tmp)
 
-          score = s2 * 0.9 + s4 * 0.1
+          if all_p == 0:
+              score = self.eval(grid)
+          else:
+              score /= all_p
           scores.append(score)
       if scores:
           b = sum(scores) / len(scores)
@@ -419,7 +427,7 @@ class AI(object):
           continue
         #print grid
         #print g2
-        score = s1 = self.search_min(g2, 3-1)
+        score = s1 = self.search_min(g2, 3-1, 1.0)
         #score = s2 = self.search_drop_and_move(g2, 3-1)
 
         #print score, m
