@@ -350,20 +350,21 @@ class AI(object):
         self.table[key] = avg_score
         return avg_score
 
-    def search_max(self, grid, depth, a, moves):
+    def search_max(self, grid, depth, moves):
+      best_score = -INF
       for m in moves:
         g2 = self.move(grid, m)
         if g2 == grid:
           continue
-        score = self.search_min(g2, depth - 1, a)
+        score = self.search_min(g2, depth - 1)
         #print 'search_max', m, score
-        if score > a:
-          a = score
+        if score > best_score:
+          best_score = score
 
 
-      return a
+      return best_score
 
-    def search_min(self, grid, depth, a):
+    def search_min(self, grid, depth):
       if depth == 0:
         return self.eval(grid)
 
@@ -380,10 +381,10 @@ class AI(object):
           tmp = list(grid[i])
           tmp[j] = 2
           grid[i] = tuple(tmp)
-          s2 = self.search_max(grid, depth, a, moves)
+          s2 = self.search_max(grid, depth, moves)
           tmp[j] = 4
           grid[i] = tuple(tmp)
-          s4 = self.search_max(grid, depth, a, moves)
+          s4 = self.search_max(grid, depth, moves)
           tmp[j] = None
           grid[i] = tuple(tmp)
 
@@ -416,8 +417,8 @@ class AI(object):
           continue
         #print grid
         #print g2
-        #score = s1 = self.search_min(g2, 3-1, -INF)
-        score = s2 = self.search_drop_and_move(g2, 3-1)
+        score = s1 = self.search_min(g2, 3-1)
+        #score = s2 = self.search_drop_and_move(g2, 3-1)
 
         #print score, m
         if score > best_score:
