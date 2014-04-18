@@ -146,6 +146,7 @@ def simulation(idx):
 
   remain.value -= 1
   sys.stderr.write('simulation remain %d\n' % remain.value)
+  sys.stdout.flush()
 
   return gm.getScore(), step, total_time
 
