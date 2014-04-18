@@ -65,21 +65,34 @@ class AI(object):
         self.table = {}
         self.move_table = {}
         self.move_table_r = {}
+        self.idx_to_row = []
+        self.row_to_idx = {}
         self.build_move_table()
 
     def build_move_table(self):
+        # assume max cell is 32768
+        max_cell = 2**15
         values = [None] + [2**x for x in range(1, 16)]
+        assert len(values) == 16
+        idx = 0
         for a in values:
             for b in values:
                 for c in values:
                     for d in values:
                         row = a, b, c, d
-                        self.move_table[row] = tuple(move_row(row))
-                        self.move_table_r[row] = tuple(move_row(row[::-1])[::-1])
+                        self.idx_to_row.append(row)
+                        self.row_to_idx[row] = idx
+                        idx += 1
 
-    def emptyGrid(self):
-        return [[None,None,None,None],[None,None,None,None],
-                [None,None,None,None],[None,None,None,None]]
+        for idx, row in enumerate(self.idx_to_row):
+            row_moved = tuple(move_row(row))
+            if max(row_moved) > max_cell:
+                self.move_table[idx] = -1
+            else:
+                self.move_table[idx] = self.row_to_idx[row_moved]
+
+            self.move_table[row] = row_moved
+            self.move_table_r[row] = tuple(move_row(row[::-1])[::-1])
 
     def rotateLeft(self, grid):
         g = grid
@@ -148,17 +161,14 @@ class AI(object):
         return out
 
     def show(self, grid):
-        for x in range(4):
-            for y in range(4):
+        for y in range(4):
+            for x in range(4):
                 if grid[x][y]:
                     print '%4d' % grid[x][y],
                 else:
                     print '   .',
             print
 
-
-    def canMove(self, grid, direction):
-      return grid != self.move(grid, direction)
 
     def eval_monotone(self, grid):
       L = R = U = D = 0
@@ -258,22 +268,102 @@ class AI(object):
       self.table[key] = score
       return score
 
-    def search_max(self, grid, depth, a, b, moves):
+    def search_drop_and_move(self, grid, depth):
+        if depth == 0:
+            return self.eval(grid)
+
+        key = self.encode(grid), depth
+        if key in self.table:
+            return self.table[key]
+
+        score_keeper = [[{},{},{},{}], [{},{},{},{}], [{},{},{},{}], [{},{},{},{}]]
+        for direction in range4:
+            moved = [0]*4 # TODO
+            is_moved = [0]*4
+            num_blank = 0
+            for i in range4:
+                moved[i] = self.move_table[grid[i]]
+                is_moved[i] = moved[i] != grid[i]
+            total_can_move = is_moved.count(True)
+
+            for moving in range4:
+                row = grid[moving]
+                other_can_move = total_can_move - (is_moved[moving] and 1)
+
+                x = 0
+                while x < 4:
+                    # skip non-blank
+                    if row[x] is not None:
+                        x += 1
+                        continue
+
+                    # found first blank now
+                    for v, p in ((2, 0.9), (4, 0.1)):
+                        drop_row = row[:x] + (v,) + row[x+1:]
+                        next_row = self.move_table[drop_row]
+                        this_can_move = drop_row != next_row
+                        next_grid = moved[:moving] + [next_row] + moved[moving+1:]
+
+                        if p not in score_keeper[moving][x]:
+                            score_keeper[moving][x][p] = [-INF]
+                        if not (this_can_move or other_can_move) and (x == 3 or row[x+1] is not None):
+                            continue
+                        score = self.search_drop_and_move(next_grid, depth-1)
+                        if this_can_move or other_can_move:
+                            score_keeper[moving][x][p].append(score)
+                        x2 = x + 1
+                        while x2 < 4 and row[x2] is None:
+                            if p not in score_keeper[moving][x2]:
+                                score_keeper[moving][x2][p] = []
+                            score_keeper[moving][x2][p].append(score)
+                            x2 += 1
+
+                        
+                    # next round
+                    while x < 4 and row[x] is None:
+                        x += 1
+
+            grid = self.rotateRight(grid)
+            score_keeper = self.rotateRight(score_keeper)
+
+        scores = []
+        for x in range4:
+            for y in range4:
+                cell = score_keeper[x][y]
+                if not cell:
+                    continue
+                cell_score = 0
+                for p, vs in cell.items():
+                    if vs:
+                        score = max(vs)
+                    else:
+                        score = -INF
+                    cell_score += score * p
+                scores.append(cell_score)
+
+        if scores:
+            avg_score = sum(scores) / len(scores)
+        else:
+            avg_score = -INF
+
+
+        self.table[key] = avg_score
+        return avg_score
+
+    def search_max(self, grid, depth, a, moves):
       for m in moves:
         g2 = self.move(grid, m)
         if g2 == grid:
           continue
-        score = self.search_min(g2, depth - 1, a, b)
+        score = self.search_min(g2, depth - 1, a)
         #print 'search_max', m, score
-        if score >= b:
-          return b
         if score > a:
           a = score
 
 
       return a
 
-    def search_min(self, grid, depth, a, b):
+    def search_min(self, grid, depth, a):
       if depth == 0:
         return self.eval(grid)
 
@@ -281,10 +371,6 @@ class AI(object):
       if key in self.table:
         return self.table[key]
 
-      #g = clone(grid)
-      #assert g == grid
-      #print '=' * 30
-      #self.show(grid)
       scores = []
       for i in range4:
         for j in range4:
@@ -294,10 +380,10 @@ class AI(object):
           tmp = list(grid[i])
           tmp[j] = 2
           grid[i] = tuple(tmp)
-          s2 = self.search_max(grid, depth, a, b, moves)
+          s2 = self.search_max(grid, depth, a, moves)
           tmp[j] = 4
           grid[i] = tuple(tmp)
-          s4 = self.search_max(grid, depth, a, b, moves)
+          s4 = self.search_max(grid, depth, a, moves)
           tmp[j] = None
           grid[i] = tuple(tmp)
 
@@ -305,6 +391,9 @@ class AI(object):
           scores.append(score)
       if scores:
           b = sum(scores) / len(scores)
+      else:
+          assert 0
+          b = INF
 
       self.table[key] = b
       return b
@@ -327,7 +416,8 @@ class AI(object):
           continue
         #print grid
         #print g2
-        score = self.search_min(g2, 3-1, -INF, INF)
+        #score = s1 = self.search_min(g2, 3-1, -INF)
+        score = s2 = self.search_drop_and_move(g2, 3-1)
 
         #print score, m
         if score > best_score:
@@ -344,4 +434,4 @@ class AI(object):
       return best_move
 
 
-# vim:sw=4:expandtab
+# vim:sw=4:expandtab:softtabstop=4
