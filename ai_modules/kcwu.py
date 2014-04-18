@@ -60,14 +60,42 @@ def move_row(row):
 class AI(object):
     def __init__(self):
         self.total_node = 0
+        self.total_eval = 0
         self.total_time = 0
         self.eval_count = 0
+        self.node_count = 0
         self.table = {}
         self.move_table = {}
         self.move_table_r = {}
         self.idx_to_row = []
         self.row_to_idx = {}
         self.build_move_table()
+        self.build_eval_monotone_table()
+
+    def build_eval_monotone_table(self):
+        self.eval_monotine_table = {}
+        for idx, row in enumerate(self.idx_to_row):
+            L = R = 0
+            m = 0
+            for y in range3:
+              if row[y] and row[y] >= row[y+1]:
+                m += 1
+                L += m ** 2 * 4
+              else:
+                L -= abs((row[y] or 0)- (row[y+1] or 0)) * 1.5
+                m = 0
+
+            m = 0
+            for y in range3:
+              if row[y] <= row[y+1] and row[y+1]:
+                m += 1
+                R += m ** 2 * 4
+              else:
+                R -= abs((row[y] or 0)- (row[y+1] or 0)) * 1.5
+                m = 0
+            self.eval_monotine_table[row] = L, R
+
+
 
     def build_move_table(self):
         # assume max cell is 32768
@@ -224,9 +252,25 @@ class AI(object):
             m = 0
 
       UD += max(U, D)
-      U = D = 0
 
       return LR + UD
+
+    def eval_monotone(self, grid):
+        L = R = U = D = 0
+        LR = UD = 0
+        for x in range4:
+            Lt, Rt = self.eval_monotine_table[grid[x]]
+            L += Lt
+            R += Rt
+        LR = max(L, R)
+
+        grid = self.rotateRight(grid)
+        for x in range4:
+            Ut, Dt = self.eval_monotine_table[grid[x]]
+            U += Ut
+            D += Dt
+        UD = max(U, D)
+        return LR + UD
 
     def eval_smoothness(self, grid):
         score_smooth = 0
@@ -241,12 +285,8 @@ class AI(object):
         return score_smooth
 
     def eval_free(self, grid):
-      free = 0
-      for i in range4:
-        for j in range4:
-          if grid[i][j] is None:
-            free += 1
-      return -(16-free)**2
+        free = grid[0].count(None) + grid[1].count(None) + grid[2].count(None) + grid[3].count(None)
+        return -(16-free)**2
 
     def eval(self, grid):
       key = self.encode(grid)
@@ -271,6 +311,7 @@ class AI(object):
     def search_drop_and_move(self, grid, depth):
         if depth == 0:
             return self.eval(grid)
+        self.node_count += 1
 
         key = self.encode(grid), depth
         if key in self.table:
@@ -354,6 +395,7 @@ class AI(object):
 
     def search_max(self, grid, depth, moves, nodep):
       best_score = -INF
+      self.node_count += 1
       for m in moves:
         g2 = self.move(grid, m)
         if g2 == grid:
@@ -369,6 +411,7 @@ class AI(object):
     def search_min(self, grid, depth, nodep):
       if depth == 0:
         return self.eval(grid)
+      self.node_count += 1
 
       key = self.encode(grid), depth
       if key in self.table:
@@ -386,7 +429,7 @@ class AI(object):
           score = 0
           all_p = 0
           for v, p in ((2, 0.9), (4, 0.1)):
-              if blank_count > 3 and p * nodep*0.9 < 0.1: # XXX hardcode for level=3
+              if blank_count > 4 and p * nodep*0.9 < 0.1: # XXX hardcode for level=3
                   continue
               tmp[j] = v
               grid[i] = tuple(tmp)
@@ -411,6 +454,7 @@ class AI(object):
 
     def reset(self):
       self.eval_count = 0
+      self.node_count = 0
       self.table = {}
 
     def getNextMove(self, grid):
@@ -438,9 +482,10 @@ class AI(object):
       t1 = time.time()
 
       self.total_time += t1 - t0
-      self.total_node += self.eval_count
-      print 't=%.2fs, node=%d, total_node=%d, %fnps' % (
-          t1-t0, self.eval_count, self.total_node, self.total_node/self.total_time)
+      self.total_eval += self.eval_count
+      self.total_node += self.node_count
+      print 't=%.2fs, eval=%d, node=%d, total_eval=%d, total_node=%d, %fnps' % (
+          t1-t0, self.eval_count, self.node_count, self.total_eval, self.total_node, (self.total_node+self.total_eval)/self.total_time)
 
       return best_move
 
