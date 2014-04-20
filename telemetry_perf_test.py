@@ -122,7 +122,7 @@ def simulation(idx):
     else:
       stale_steps = 0
     if stale_steps >= 10:
-      sys.stderr.write('stale\n')
+      sys.stderr.write('stale idx=%d\n' % idx)
       assert 0
       timeout_count.value = -99999
     t0 = time.time()
