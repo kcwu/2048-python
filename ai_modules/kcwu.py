@@ -398,7 +398,7 @@ class AI(object):
       self.table = {}
 
     def getNextMove(self, grid):
-      best_score = -INF
+      best_score = -INF-1
       best_move = random.choice(moves)
       self.reset()
 
