@@ -1,0 +1,3 @@
+*.pyc
+*.pyo
+ai_modules/*_pack.py
