@@ -1,9 +1,6 @@
 import random
+import sys
 
-from ai import AI
-#from ai_modules.dumb import AI
-from ai_modules.kcwu import AI
-#from ai_modules.short_lo import AI
 N = 4
 
 KEY_CODE = {'left': 37,
@@ -145,6 +142,16 @@ class Board(object):
           print '   .',
       print
 
+def load_ai_module():
+  if len(sys.argv) > 3:
+    name = sys.argv[3]
+  else:
+    name = 'kcwu'
+  fullpath = 'ai_modules.' + name
+  sys.stderr.write('load module %s\n' % fullpath)
+  ai = __import__(fullpath)
+  return getattr(ai, name)
+
 
 class GameManager(object):
   def __init__(self):
@@ -153,7 +160,7 @@ class GameManager(object):
     self.board.randomTile()
     self.board.randomTile()
     self.board.show()
-    self.ai = AI()
+    self.ai = load_ai_module().AI()
 
   def setPlayer(self, name):
     self.player = name
