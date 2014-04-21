@@ -47,12 +47,9 @@ def eval_monotone_LR(grid):
 def eval_smoothness(grid):
     return -sum( min([1e8]+[abs((grid[x][y] or 2) - (grid[x+a][y+b] or 2)) for a, b in((-1,0),(0,-1),(1,0),(0,1)) if 0 <= x+a <4 and 0<=y+b<4]) for x in range4 for y in range4)
 
-def count_free(grid):
-    return sum(r.count(None) for r in grid)
-
 def EVAL(grid):
   return eval_monotone_LR(grid) + eval_monotone_LR(rotateRight(grid))+ eval_smoothness(grid) \
-     -(16-count_free(grid))**2
+     -(16-sum(r.count(None) for r in grid))**2
 
 def encode(grid):
     return tuple(grid[0]+grid[1]+grid[2]+grid[3])
@@ -79,20 +76,17 @@ def search_min(grid, depth, nodep):
     return table[key]
 
   scores = []
-  blank_count = count_free(grid)
   for i in range4:
     row = grid[i]
     for j in range4:
       if not row[j]:
-          score = all_p = 0
+          score = 0
           for v, p in ((2, .9), (4, .1)):
-              if blank_count <= 4 or p*nodep*.9 > .1: # XXX hardcode for level=2
                   row[j] = v
                   score += p * search_max(grid, depth, p*nodep)
-                  all_p += p
           row[j] = None
 
-          scores.append(score / all_p if all_p else EVAL(grid))
+          scores.append(score)
 
   b = sum(scores) / len(scores)
   table[key] = b
@@ -107,15 +101,12 @@ def gen_job3(grid, depth, nodep, jq):
         jq.put((g2, depth - 1, nodep))
 
 def gen_job2(grid, depth, nodep, jq):
-    blank_count = count_free(grid)
-
     for i in range4:
       row = grid[i]
       for j in range4:
         if not row[j]:
 
             for v, p in ((2, .9), (4, .1)):
-                if blank_count <= 4 or p * nodep*0.9 > 0.1: # XXX hardcode for search_depth
                     row[j] = v
                     gen_job3(grid, depth, p*nodep, jq)
             row[j] = None
