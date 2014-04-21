@@ -148,7 +148,7 @@ def load_ai_module():
   else:
     name = 'kcwu'
   fullpath = 'ai_modules.' + name
-  sys.stderr.write('load module %s\n' % fullpath)
+  print 'load module', fullpath
   ai = __import__(fullpath)
   return getattr(ai, name)
 

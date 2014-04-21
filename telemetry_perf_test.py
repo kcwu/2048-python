@@ -112,6 +112,7 @@ def simulation(idx):
   stale_steps = 0
   grid = None
   last_grid = None
+  times = []
   while not gm.isOver():
     step += 1
     print 'Current score: %d grid: %r' % (gm.getScore(), gm.getGrid())
@@ -129,6 +130,9 @@ def simulation(idx):
     nextKey = gm.ai.getNextMove(grid)
     t1 = time.time()
     total_time += t1 - t0
+    times.append(t1 - t0)
+    times.sort(reverse=True)
+    times = times[:20]
     if t1 - t0 > 0.1:
       timeout_count.value += 1
       sys.stderr.write('t %f, count=%d\n' % (t1 - t0, timeout_count.value))
@@ -145,6 +149,9 @@ def simulation(idx):
       gm.keepGoing()
 
   remain.value -= 1
+  times = [int(t*1000) for t in times]
+  sys.stderr.write('max times %r\n' % times)
+  sys.stderr.write('%d score %d\n' % (idx, gm.getScore()))
   sys.stderr.write('simulation remain %d\n' % remain.value)
   sys.stdout.flush()
 
@@ -172,6 +179,7 @@ def Main(args):
     scores = []
 
     remain.value = ITERATION
+    stdout = sys.stdout
     if NCPU == 1:
       result = map(simulation, range(ITERATION))
     else:
@@ -182,6 +190,7 @@ def Main(args):
       total_t += t
       total_step += step
     scores.sort()
+    sys.stdout = stdout
     print "Scores = %r" % scores
     print "Avg = %f" % ((sum(scores) - max(scores) - min(scores)) /
         (ITERATION - 2.0))
