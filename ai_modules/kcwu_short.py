@@ -72,7 +72,7 @@ def search_min(grid):
 
   return sum(scores) / len(scores)
 
-class AI(object):
+class AI:
     def getNextMove(self, grid):
       return ['up','left','down','right'][max((search_min(move(grid,m)[0]),m) for m in range4 if move(grid,m)[1])[1]]
 
